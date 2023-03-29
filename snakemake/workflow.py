@@ -476,6 +476,7 @@ class Workflow:
         self,
         targets=None,
         dryrun=False,
+        generate_unit_tests=None,
         touch=False,
         scheduler_type=None,
         scheduler_ilp_solver=None,
@@ -508,6 +509,7 @@ class Workflow:
         google_lifesciences_regions=None,
         google_lifesciences_location=None,
         google_lifesciences_cache=False,
+        tes=None,
         precommand="",
         preemption_default=None,
         preemptible_rules=None,
@@ -557,6 +559,7 @@ class Workflow:
         batch=None,
         keepincomplete=False,
         keepmetadata=True,
+        executesubworkflows=True,
     ):
 
         self.check_localrules()
@@ -719,6 +722,7 @@ class Workflow:
 
         if (
             self.subworkflows
+            and executesubworkflows
             and not printdag
             and not printrulegraph
             and not printfilegraph
@@ -740,6 +744,7 @@ class Workflow:
                         subworkflow.snakefile,
                         workdir=subworkflow.workdir,
                         targets=subworkflow_targets,
+                        cores=self.cores,
                         configfiles=[subworkflow.configfile]
                         if subworkflow.configfile
                         else None,
@@ -758,7 +763,7 @@ class Workflow:
             # rescue globals
             self.globals.update(globals_backup)
 
-        dag.postprocess()
+        dag.postprocess(update_needrun=False)
         if not dryrun:
             # deactivate IOCache such that from now on we always get updated
             # size, existence and mtime information
@@ -789,7 +794,20 @@ class Workflow:
 
         updated_files.extend(f for job in dag.needrun_jobs for f in job.output)
 
-        if export_cwl:
+        if generate_unit_tests:
+            from snakemake import unit_tests
+
+            path = generate_unit_tests
+            deploy = []
+            if self.use_conda:
+                deploy.append("conda")
+            if self.use_singularity:
+                deploy.append("singularity")
+            unit_tests.generate(
+                dag, path, deploy, configfiles=self.overwrite_configfiles
+            )
+            return True
+        elif export_cwl:
             from snakemake.cwl import dag_to_cwl
             import json
 
@@ -909,6 +927,7 @@ class Workflow:
             google_lifesciences_regions=google_lifesciences_regions,
             google_lifesciences_location=google_lifesciences_location,
             google_lifesciences_cache=google_lifesciences_cache,
+            tes=tes,
             preemption_default=preemption_default,
             preemptible_rules=preemptible_rules,
             precommand=precommand,
