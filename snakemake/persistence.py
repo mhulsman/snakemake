@@ -225,7 +225,9 @@ class Persistence(PersistenceExecutorInterface):
         shutil.rmtree(self._lockdir)
 
     def cleanup_metadata(self, path):
-        return self._delete_record(self._metadata_path, path)
+        res_m = self._delete_record(self._metadata_path, path)
+        res_i = self._delete_record(self._incomplete_path, path)
+        return res_m or res_i
 
     def cleanup_shadow(self):
         if os.path.exists(self.shadow_path):
