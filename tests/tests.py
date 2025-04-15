@@ -22,7 +22,7 @@ from snakemake.shell import shell
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from .common import run, dpath, apptainer, connected
+from .common import run, dpath, apptainer, connected,copy
 from .conftest import (
     skip_on_windows,
     only_on_windows,
@@ -750,6 +750,43 @@ def test_profile():
 @connected
 def test_singularity():
     run(dpath("test_singularity"), deployment_method={DeploymentMethod.APPTAINER})
+
+
+@skip_on_windows
+@apptainer
+@connected
+def test_singularity_pwd_symlink():
+    path = dpath('test_singularity_pwd_symlink')
+
+    temp_dir = tempfile.TemporaryDirectory()
+
+    copy_dir = Path(temp_dir.name) / 'test_sigularity_pwd_symlink'
+    os.mkdir(copy_dir)
+
+    symlink_dir = Path(temp_dir.name) / 'test_singularity_pwd_symlink_link'
+    os.symlink(copy_dir, symlink_dir, target_is_directory=True)
+
+    # copy files
+    for f in os.listdir(path):
+        copy(os.path.join(path, f), copy_dir)
+
+
+    #change PWD value
+    pwd_old = os.environ.get('PWD',None)
+    os.environ['PWD'] = str(symlink_dir)
+
+    run(symlink_dir, tmpdir=symlink_dir, cleanup=False, deployment_method={DeploymentMethod.APPTAINER})
+
+    #reset old PWD value
+    if pwd_old is not None:
+        os.environ['PWD'] = pwd_old
+    else:
+        del os.environ['PWD']
+
+
+    temp_dir.cleanup()
+
+
 
 
 @skip_on_windows

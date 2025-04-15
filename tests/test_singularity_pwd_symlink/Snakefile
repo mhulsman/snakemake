@@ -1,0 +1,16 @@
+import os
+
+
+
+rule a:
+    input:
+        "test.txt",
+    output:
+        "test.out",
+    singularity:
+        "docker://bash"
+    params: 
+        curdir = lambda x: os.environ['PWD']
+    shell:
+        'ls {params.curdir}/test.txt; echo "test" > {output}'
+
