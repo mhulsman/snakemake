@@ -139,6 +139,12 @@ def shellcmd(
             f"Source cache directory {source_cache_path} does not exist, skipping bind mount"
         )
 
+    # --home only mounts the real path (i.e. without symlinks) of the current working directory.
+    # if PWD contains a symlink, the following argument is needed to also make the
+    # symlinked version of the path accessible within the container.
+    if "PWD" in os.environ and os.getcwd() != os.environ["PWD"]:
+        args += f" --bind {repr(os.environ['PWD'])}:{repr(os.environ['PWD'])}:rw"
+
     cmd = "{} singularity {} exec --home {} {} {} {} -c '{}'".format(
         envvars,
         "--quiet --silent" if quiet else "",
