@@ -658,9 +658,9 @@ class Workflow(WorkflowExecutorInterface):
         """
         Add a rule.
         """
-        if self.is_rule(rule.name) and not allow_overwrite:
+        if self.is_rule(rule.name) and False:
             raise CreateRuleException(
-                f"The name {rule.name} is already used by another rule",
+                f"The name {rule.name} is already used by another rule: {self._rules[rule.name]} in {self._rules[rule.name].snakefile} at {self._rules[rule.name].lineno}",
                 lineno=rule.lineno,
                 snakefile=rule.snakefile,
             )

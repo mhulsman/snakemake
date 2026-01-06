@@ -5,7 +5,7 @@ from snakemake.io import get_flag_value, is_flagged
 def fmt_iofile(f, as_input: bool = False, as_output: bool = False):
     as_io = as_input or as_output
 
-    if f.is_storage:
+    if getattr(f, 'is_storage', False):
         if as_input:
             if f.storage_object.retrieve:
                 storage_phrase = "retrieve from storage"
